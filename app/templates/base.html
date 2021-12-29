@@ -1,0 +1,109 @@
+<!-- base.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>{% block title %}{% endblock %}</title>
+    <!-- Bootstrap core CSS -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom styles for this template -->
+    <link href="https://getbootstrap.com/examples/jumbotron-narrow/jumbotron-narrow.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+      integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+      crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+        integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+        crossorigin=""></script>
+    <script>
+      function update_day(nums, day, old) {
+          var xhr = new XMLHttpRequest();
+          var getUrl = window.location
+          var baseUrl = getUrl.protocol + "//" + getUrl.host + "/" + getUrl.pathname.split('/')[0];
+          xhr.open("POST", baseUrl + 'api/update/order/day');
+
+          xhr.setRequestHeader("Accept", "application/json");
+          xhr.setRequestHeader("Content-Type", "application/json");
+          
+
+          var data2 = `{
+                "order_nr":"`+ nums + `",
+                "new_day":`+ day + `,
+                "old_day":`+ old + `
+            }`;
+
+          xhr.send(data2);
+        }
+        function delete_order(nums) {
+            var xhr = new XMLHttpRequest();
+            var getUrl = window.location
+            var baseUrl = getUrl.protocol + "//" + getUrl.host + "/" + getUrl.pathname.split('/')[0];
+            xhr.open("POST", baseUrl + 'api/remove/order');
+
+            xhr.setRequestHeader("Accept", "application/json");
+            xhr.setRequestHeader("Content-Type", "application/json");
+            
+
+            var data2 = `{
+                "order_nr":"`+ nums + `"
+                }`;
+
+            xhr.send(data2);
+            return xhr;
+        }
+        function add_order(location, tlf, recv, day) {
+            var xhr = new XMLHttpRequest();
+            xhr.responseType = 'json';
+            var getUrl = window.location
+            var baseUrl = getUrl.protocol + "//" + getUrl.host + "/" + getUrl.pathname.split('/')[0];
+            xhr.open("POST", baseUrl + 'api/add/order');
+
+            xhr.setRequestHeader("Accept", "application/json");
+            xhr.setRequestHeader("Content-Type", "application/json");
+            
+
+            var data2 = `{
+                "location":"`+ location+`",
+                "phone":"`+tlf+`",
+                "recv":"`+recv+`",
+                "day_id":"`+day+`"
+            }`;
+
+            xhr.send(data2);
+            return xhr;
+          }
+    </script>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header clearfix">
+        <nav>
+          <ul class="nav nav-pills pull-right">
+            <li role="presentation"><a href="/">Home</a></li>
+            <li role="presentation"><a href="/about">About</a></li>
+            {% if not current_user.is_authenticated %}
+            <li role="presentation"><a href="/login">Login</a></li>
+            {% endif %}
+            {% if current_user.is_authenticated %}
+            <li role="presentation"><a href="/map">Map</a></li>
+            {% endif %}
+            {% if current_user.is_authenticated %}
+            <li role="presentation"><a href="/route">Route</a></li>
+            {% endif %}
+            {% if current_user.is_authenticated %}
+            <li role="presentation"><a href="/add">Add</a></li>
+            {% endif %}
+            {% if current_user.is_authenticated %}
+            <li role="presentation"><a href="/logout">Logout</a></li>
+            {% endif %}
+          </ul>
+        </nav>
+      </div>
+      {% block body %}
+      {% endblock %}
+      <footer class="footer">
+        <p>© 2020 FWP</p>
+      </footer>
+    </div> <!-- /container -->
+  </body>
+</html>

@@ -1,0 +1,83 @@
+<!-- about.html-->
+
+{% extends "base.html" %}
+{% block title %}Add entries{% endblock %}
+{% block body %}
+<div class="jumbotron">
+    <h1>Add entries</h1>
+</div>
+<div>
+<h2>Legg til ny levering:</h2>
+<form>
+    <label for="fname">Navn:</label><br>
+    <input style="width: 300px;" type="text" id="recv" name="recv" value=""><br>
+    <label for="lname">Adresse:</label><br>
+    <input style="width: 300px;" type="text" id="loc" name="loc" value=""><br>
+    <label for="lname">Tlf:</label><br>
+    <input style="width: 300px;" type="text" id="tlf" name="tlf" value=""><br>
+    <label for="lname">Kjøreliste:</label><br>
+    <input style="width: 300px;" type="number" id="day" name="day" value=0><br><br>
+    <input type="button" id="leggtil" value="Legg til">
+</form>
+<br>
+</div>
+<div>
+    <h3 id="pogg"></h3><br>
+    <input type="button" id="dellast" value="Slett siste">
+    <h3 id="pogg2"></h3><br>
+</div>
+
+
+<script>
+    const btn = document.querySelector('#leggtil');
+    const recv = document.querySelector('#recv');
+    const loc = document.querySelector('#loc');
+    const tlf = document.querySelector('#tlf');
+    const day = document.querySelector('#day');
+    const pog = document.querySelector('#pogg');
+    const pog2 = document.querySelector('#pogg2');
+    const del = document.querySelector('#dellast');
+    var last = ""
+    btn.onclick = () => { 
+        if (recv.value.length > 0 && loc.value.length > 0 && tlf.value.length > 0 && day.value.length > 0){
+            var xhr = add_order(loc.value, tlf.value, recv.value, day.value);
+            xhr.onload  = function () {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 202){
+                        pog.innerHTML = "Added order "+ xhr.response.order_nr
+                        last = xhr.response.order_nr
+                    } else if (xhr.status === 207){
+                        pog.innerHTML = "Could not find GPS match for order. " + xhr.response.order_nr
+                        last = xhr.response.order_nr
+                    } else {
+                        pog.innerHTML = "An error occured."
+                    }
+                }
+            }
+        } else {
+            pog.innerHTML = "All fields must be filled."
+        }
+    };
+    del.onclick  = () => {
+        pog2.innerHTML  = "";
+        pog.innerHTML = "";
+        if (last.length > 1){
+            delete_order(last).onload = function () {
+                pog2.innerHTML = "Last order deleted."
+                if (xhr.status === 200){
+                    pog2.innerHTML = "Last order deleted."
+                } else {
+                    pog2.innerHTML = "Could not delete last entry."
+                }
+                
+            }
+            last = "";
+        } else {
+            pog2.innerHTML = "No order cached."
+        }
+
+    };
+
+
+</script>
+{% endblock %}

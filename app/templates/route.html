@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% block title %}Route{% endblock %}
+
+{% block body %}
+<style>
+    .square {
+        height: 25px;
+        width: 25px;
+        background-color: rgb(255, 255, 255);
+
+    }
+    th, td {
+        padding: 5px;
+        border-style: solid;
+        border-color: rgb(0, 0, 0);
+    }
+</style>
+<div>
+    <h2> Kjøreliste
+    </h2>
+    <table id="gable">
+        <tr>
+            <th>Mark&nbsp&nbsp&nbsp</th>
+            <th>Index&nbsp&nbsp&nbsp</th>
+            <th>LOCATION&nbsp&nbsp&nbsp</th>
+            <th>TLF&nbsp&nbsp&nbsp</th>
+            <th>ID&nbsp&nbsp&nbsp</th>
+            <th>Navn&nbsp&nbsp&nbsp</th>
+            <th>Levert&nbsp&nbsp&nbsp</th>
+        </tr>
+    </table>
+    <button id="doit">Move</button><input type="text" placeholder=1 id="day_id"><br>
+    <button id="delete">Delete Entries</button>
+</div>
+<br>
+<br>
+<br>
+<div>
+    <h2> Ekskludert
+    </h2>
+    <table id="gable2">
+        <tr>
+            <th>Index&nbsp&nbsp&nbsp</th>
+            <th>LOCATION&nbsp&nbsp&nbsp</th>
+            <th>TLF&nbsp&nbsp&nbsp</th>
+            <th>ID&nbsp&nbsp&nbsp</th>
+            <th>Navn&nbsp&nbsp&nbsp</th>
+            <th>Levert&nbsp&nbsp</th>
+        </tr>
+    </table>
+</div>
+<br>
+<br>
+<br>
+<div id="map" style="height: 800px;"></div>
+<button id="hide">Gjem</button>
+
+<script>
+     //first add an event listener for page load
+        document.addEventListener("DOMContentLoaded", append_json, false); // get_json_data is the function name that will fire on page load
+
+        var old_day = 0
+        //this function appends the json data to the table 'gable'
+        var data = JSON.parse('{{ route|tojson|safe }}');
+        function append_json() {
+            var table = document.getElementById('gable');
+            data.features.forEach(function (object) {
+                var tr = document.createElement('tr');
+                tr.innerHTML = 
+                    '<td><input type="checkbox" id="'+object.properties.order_number+'" class="select" value="'+ object.properties.order_number+'"></td>' +
+                    '<td>' + object.properties.waypoint_index + '&nbsp&nbsp&nbsp</td>' +
+                    '<td>' + object.properties.location + '&nbsp&nbsp&nbsp</td>' +
+                    '<td>' + object.properties.phone + '&nbsp&nbsp&nbsp</td>' +
+                    '<td>' + object.properties.order_number + '&nbsp&nbsp&nbsp</td>' +
+                    '<td>' + object.properties.recv + '</td>' +
+                    '<td> <div class="square"></div> </td>';
+                table.appendChild(tr);
+                if (object.properties.day_id !== old_day){
+                    old_day = object.properties.day_id;
+                }
+            });
+
+            var table = document.getElementById('gable2');
+            data.excluded.forEach(function (object) {
+                var tr = document.createElement('tr');
+                tr.innerHTML = '<td> 0&nbsp&nbsp&nbsp</td>' +
+                    '<td>' + object.properties.location + '&nbsp&nbsp&nbsp</td>' +
+                    '<td>' + object.properties.phone + '&nbsp&nbsp&nbsp</td>' +
+                    '<td>' + object.properties.order_number + '&nbsp&nbsp&nbsp</td>' +
+                    '<td>' + object.properties.recv + '</td>' +
+                    '<td> <div class="square"></div> </td>';
+                table.appendChild(tr);
+            });
+        }
+        const btn = document.querySelector('#doit');
+        const delbtn = document.querySelector('#delete');
+        document.querySelector('#day_id').value = 1;
+        btn.onclick = () => {
+            var allCB = document.querySelectorAll("input[class='select']");
+            var nums = ""
+            for (var i = 0; i < allCB.length; i++) {
+                    if (allCB[i].checked){
+                        nums = nums + allCB[i].value+","
+                    }
+                }
+            if (nums.length > 0){
+                nums = nums.slice(0, -1);
+
+                var day = document.querySelector('#day_id').value;
+                update_day(nums, day, old_day).onload = function () {
+                    document.location.reload(true);
+                };
+            }
+        };
+
+        
+
+        
+
+        delbtn.onclick = () => { 
+            var allCB = document.querySelectorAll("input[class='select']");
+            var nums = ""
+            var x = 0;
+            for (var i = 0; i < allCB.length; i++) {
+                if (allCB[i].checked) {
+                    nums = nums + allCB[i].value + ",";
+                    x = x+1;
+                }
+            }
+            if (nums.length > 0) {
+                nums = nums.slice(0, -1);
+
+                var result = confirm("Are you sure you want to delete " + x + " entries?");
+                if (result == true) {
+                    delete_order(nums).onload = function () {
+                        document.location.reload(true);
+                    };
+                }
+            }
+            
+        };
+
+        const hide = document.querySelector('#hide');
+        hide.onclick = () => { 
+            const m = document.querySelector('#map');
+            if (m.style.display == "none"){
+                m.style.display = "block"
+            } else {
+                m.style.display = "none"
+
+            }
+        }
+
+
+
+
+        // The first parameter are the coordinates of the center of the map
+        // The second parameter is the zoom level
+        var map = L.map('map').setView([59.42513, 11.34535], 13);
+
+        const mapbox_token = "pk.eyJ1IjoiaGFsbGlzMjEiLCJhIjoiY2t4ZzUwdWFzMHEwZTJ2bnBmNjFydGdtdyJ9.aF_gw4GC6V1ALJkwNZ_PbA" 
+        // {s}, {z}, {x} and {y} are placeholders for map tiles
+        // {x} and {y} are the x/y of where you are on the map
+        // {z} is the zoom level
+        // {s} is the subdomain of cartodb
+        var layer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="http://cartodb.com/attributions">CartoDB</a>'
+            });
+        map.addLayer(layer);
+
+        function style(feature) {
+                return {
+                    icon
+                };
+            }
+        
+        L.geoJSON(data, {
+                pointToLayer: function (feature, latlng) {
+                    return L.marker(latlng, { icon: L.icon({
+                        iconUrl: 'https://a.tiles.mapbox.com/v4/marker/pin-m-'+feature.properties.waypoint_index+'+7e7e7e.png?access_token='+mapbox_token,
+                        
+                        iconAnchor: [16, 37],
+                        popupAnchor: [0, -28]
+                    }) });
+                },
+                onEachFeature: function (feature, layer) {
+                    layer.bindPopup('<a href="https://kart.gulesider.no/s/'+ feature.properties.location+'" target="_blank"><p>' + feature.properties.location + '</p></a><p>'+feature.properties.recv+'</p>');
+
+                }
+            }).addTo(map);
+
+        
+
+</script>
+{% endblock %}

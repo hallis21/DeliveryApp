@@ -1,2 +1,7 @@
 # DeliveryApp
  A Web based API / Frontend for handling deliveries in Norway
+
+
+This project containes some remenants from an older time which are not used. This is mostly stuff related to gathering deliveries from Interflora. At the moment this project is a general solution for any kind of delivery in Norway.
+
+
